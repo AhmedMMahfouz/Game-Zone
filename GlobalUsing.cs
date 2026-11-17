@@ -1,0 +1,10 @@
+﻿global using Microsoft.EntityFrameworkCore;
+global using Microsoft.EntityFrameworkCore.Metadata.Builders;
+global using  Microsoft.AspNetCore.Mvc.Rendering;
+global using GameHub.Models.Entity;
+global using GameHub.Models.Data;
+global using GameHub.ViewModels;
+global using GameHub.Services.Interface;
+global using Microsoft.AspNetCore.Mvc;
+global using GameHub.CustomValidation;
+global using System.ComponentModel.DataAnnotations;

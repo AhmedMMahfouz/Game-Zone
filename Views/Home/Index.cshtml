@@ -1,0 +1,61 @@
+﻿
+@model IEnumerable<Game> 
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Games</h1>
+    @if(!Model.Any()){
+    <div class="alert alert-dismissible alert-warning">
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <h4 class="alert-heading">No Game</h4>
+        <p class="mb-0"> There Is No Game Inserted Yet <a asp-action="Create" class="alert-link">You Can Create Game </a>.</p>
+    </div>
+    }
+    else{
+
+    <div class="row mt-2">
+        @foreach (var game in Model)
+        {
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card border-success overflow-hidden"
+                     style="max-width: 20rem; height: 500px;">
+
+                    <a asp-action="Details" asp-route-id="@game.Id" asp-controller="Games" class="card-body p-0 d-flex flex-column text-decoration-none rounded rounded-3 overflow-hidden">
+                        <!-- Game Cover -->
+                        <div class="flex-grow-1 d-flex align-items-end p-3"
+                             style="background-image: url('@Url.Content($"{ConstantClass.Path}/{game.Cover}")');
+                                background-size: cover;
+                                background-position: center;
+                                background-repeat: no-repeat;
+                                min-height: 0;">
+                            <span class="badge rounded-pill bg-success fs-5">
+                                @game.Catogry.Name
+                            </span>
+                        </div>
+                        <div class="card-footer text-muted d-flex
+                                justify-content-between align-items-center
+                                gap-2">
+
+                            <h5 class="mb-0 text-truncate">
+                                @game.Name
+                            </h5>
+
+                            <div class="d-flex align-items-center flex-shrink-0">
+                                @foreach (var device in game.GameDevices)
+                                {
+                                    <i class="@device.Device.Icon me-2 fs-2"></i>
+                                }
+                            </div>
+
+                        </div>
+
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+
+       
+    
+    }

@@ -1,0 +1,62 @@
+﻿@model IEnumerable<Game>
+@{
+    ViewData["Title"] = "Home Page";
+}
+<div class="mt-2">
+    <a asp-action="Create" class="btn btn-outline-success btn-lg">
+    <i class="bi bi-patch-plus"></i>
+    Create
+    </a>
+</div>
+<table class=" mt-4 table table-hover border-primary  ">
+    <tbody>
+        @foreach (var game in Model)
+        {
+            <tr class=" border-1 border-success bo">
+                <td>
+                    <div class="d-flex">
+
+                    
+                    <div class="pe-5" >
+                        <img src="@($"{ConstantClass.Path}/{game.Cover}")" alt="@game.Name" style="height:100px; width:200Px" />
+                    </div>
+                    <div class="d-flex flex-column justify-content-center ">
+                        <h4 class="text-light">@game.Name </h4>
+                        <h5>@game.Catogry.Name</h5>
+                    </div>
+                    </div>
+                </td>
+                <td class="align-middle">
+                    <div class="d-flex justify-content-end">
+
+                    <a  asp-action="Edit" asp-route-id="@game.Id" class="btn btn-info rounded rounded-3 me-2">
+                        <i class="bi bi-pencil-fill"></i>
+                    </a>
+                    <a asp-action="Delete" asp-route-id="@game.Id" class="btn btn-danger rounded rounded-3 js-delete" data-id="@game.Id">
+                        <i class="bi bi-trash3"></i>
+                    </a>
+                    </div>
+
+                </td>
+              
+                    
+                
+               
+                
+               
+            </tr>
+            
+        }
+    </tbody>
+    
+</table>
+@section Scripts{
+    <script>
+        $(document).ready(function(){
+            $('.js-delete').on('click',function(){
+                var btn= $(this);
+                console.log(btn.data('id'));
+            });
+        });
+    </script>
+}
