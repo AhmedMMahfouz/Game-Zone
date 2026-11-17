@@ -1,62 +1,47 @@
 ﻿@model IEnumerable<Game>
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Games";
 }
 <div class="mt-2">
     <a asp-action="Create" class="btn btn-outline-success btn-lg">
-    <i class="bi bi-patch-plus"></i>
-    Create
+        <i class="bi bi-patch-plus"></i>
+        Create
     </a>
 </div>
-<table class=" mt-4 table table-hover border-primary  ">
+
+<table class="mt-4 table table-hover border-primary">
     <tbody>
         @foreach (var game in Model)
         {
-            <tr class=" border-1 border-success bo">
+            <tr class="border-1 border-success">
                 <td>
-                    <div class="d-flex">
-
-                    
-                    <div class="pe-5" >
-                        <img src="@($"{ConstantClass.Path}/{game.Cover}")" alt="@game.Name" style="height:100px; width:200Px" />
-                    </div>
-                    <div class="d-flex flex-column justify-content-center ">
-                        <h4 class="text-light">@game.Name </h4>
-                        <h5>@game.Catogry.Name</h5>
-                    </div>
-                    </div>
+                    <a asp-action="Details" asp-route-id="@game.Id" class="text-decoration-none">
+                        <div class="d-flex align-items-center">
+                            <div class="pe-5">
+                                <img src="@($"{ConstantClass.Path}/{game.Cover}")"
+                                     alt="@game.Name" style="height:100px; width:200px; object-fit:cover;" />
+                            </div>
+                            <div class="d-flex flex-column justify-content-center">
+                                <h4 class="text-light">@game.Name</h4>
+                                <h5>@game.Catogry.Name</h5>
+                            </div>
+                        </div>
+                    </a>
                 </td>
                 <td class="align-middle">
                     <div class="d-flex justify-content-end">
-
-                    <a  asp-action="Edit" asp-route-id="@game.Id" class="btn btn-info rounded rounded-3 me-2">
-                        <i class="bi bi-pencil-fill"></i>
-                    </a>
-                    <a asp-action="Delete" asp-route-id="@game.Id" class="btn btn-danger rounded rounded-3 js-delete" data-id="@game.Id">
-                        <i class="bi bi-trash3"></i>
-                    </a>
+                        <a asp-action="Edit" asp-route-id="@game.Id" class="btn btn-info rounded-3 me-2" aria-label="Edit @game.Name">
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+                        <form asp-action="Delete" asp-route-id="@game.Id" method="post"
+                              onsubmit="return confirm('Are you sure you want to delete this game?');">
+                            <button type="submit" class="btn btn-danger rounded-3" aria-label="Delete @game.Name">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
                     </div>
-
                 </td>
-              
-                    
-                
-               
-                
-               
             </tr>
-            
         }
     </tbody>
-    
 </table>
-@section Scripts{
-    <script>
-        $(document).ready(function(){
-            $('.js-delete').on('click',function(){
-                var btn= $(this);
-                console.log(btn.data('id'));
-            });
-        });
-    </script>
-}
