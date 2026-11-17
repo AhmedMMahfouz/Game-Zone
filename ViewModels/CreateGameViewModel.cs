@@ -1,21 +1,32 @@
-﻿namespace GameHub.ViewModels
+namespace GameHub.ViewModels
 {
     public class CreateGameViewModel
     {
-        [MaxLength(150)]
-        public string Name { get; set; }=default!;
-        [MaxLength(2500, ErrorMessage = "you need to shortage the discription")]
-        public string Description { get; set; } = default!;
+        [Required]
+        [StringLength(150)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(2500, ErrorMessage = "Please shorten the description.")]
+        public string Description { get; set; } = string.Empty;
+
+        [Required]
         [Display(Name = "Cover")]
-        [CoverTypeValidation(".jpg,.jpeg,.Png,.webp")]
+        [CoverTypeValidation(".jpg,.jpeg,.png,.webp")]
         [CoverSizeValidation(3)]
         public IFormFile CoverUrl { get; set; } = default!;
-        [Display(Name="Game Catogry")]
-        public int SelectedCatogryId {  get; set; }
-        public List<SelectListItem>? catogries { get; set; }= default!;
+
+        [Display(Name = "Game Category")]
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a category.")]
+        public int SelectedCatogryId { get; set; }
+
+        public List<SelectListItem> catogries { get; set; } = new();
+
         [Display(Name = "Devices")]
         [Required]
-        public List<int> SelectedDeviceID { get; set; } = default!;
-        public List<SelectListItem>? Devices {  get; set; }= default!;
+        [MinLength(1, ErrorMessage = "Select at least one device.")]
+        public List<int> SelectedDeviceID { get; set; } = new();
+
+        public List<SelectListItem> Devices { get; set; } = new();
     }
 }

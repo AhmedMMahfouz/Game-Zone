@@ -1,5 +1,4 @@
-﻿using GameHub.Services.Mapper;
-using System.Diagnostics.Eventing.Reader;
+using GameHub.Services.Mapper;
 
 namespace GameHub.Services.GameService
 {
@@ -8,88 +7,162 @@ namespace GameHub.Services.GameService
         private readonly AppDbContext _context;
         private readonly ICreateGameMapper _mapper;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly ILogger<GameServices> _logger;
 
-        public GameServices(AppDbContext context, ICreateGameMapper createGameMapper, IWebHostEnvironment webHostEnvironment)
+        public GameServices(
+            AppDbContext context,
+            ICreateGameMapper createGameMapper,
+            IWebHostEnvironment webHostEnvironment,
+            ILogger<GameServices> logger)
         {
             _context = context;
             _mapper = createGameMapper;
             _webHostEnvironment = webHostEnvironment;
+            _logger = logger;
         }
 
         public async Task Create(CreateGameViewModel createGameViewModel)
         {
-            var Game = await _mapper.GameMapper(createGameViewModel);
-            _context.Games.Add(Game);
-            _context.SaveChanges();
-        }
-        public IEnumerable<Game> GetGames()
-        {
-            return _context.Games.AsNoTracking().Include(x => x.Catogry)
-                 .Include(x => x.GameDevices).ThenInclude(g => g.Device).ToList();
-        }
-        public async Task<bool> CheckOnUnique(string GameName, int? GameId = null)
-        {
-            return !await _context.Games.AnyAsync(x => x.Name == GameName && x.Id != GameId);
+            var game = await _mapper.GameMapper(createGameViewModel);
 
-        }
-        public Game? GetById(int id)
-        {
-            return _context.Games.AsNoTracking().Include(x => x.Catogry).Include(x => x.GameDevices).ThenInclude(x => x.Device).SingleOrDefault(x => x.Id == id);
-        }
-        public async Task<Game?> Edit(EditGameFormViewModel editGameFormViewModel)
-        {
-            var game = _context.Games.Include(g => g.GameDevices)
-                .SingleOrDefault(g => g.Id == editGameFormViewModel.id);
-            if (game == null)
-                return null;
-            var hasnewcover = editGameFormViewModel.CoverUrl is not null;
-            var oldCover = game.Cover;
-            game.Name = editGameFormViewModel.Name;
-            game.Description = editGameFormViewModel.Description;
-            game.CatogryId = editGameFormViewModel.SelectedCatogryId;
-            game.GameDevices = editGameFormViewModel.SelectedDeviceID.Select(x => new GameDevice
+            try
             {
-                DeviceID = x
-            }).ToList();
-            if (hasnewcover)
-            {
-                game.Cover = await _mapper.CreateCoverName(editGameFormViewModel.CoverUrl!);
+                await _context.Games.AddAsync(game);
+                await _context.SaveChangesAsync();
             }
-
-            var effectedrows = _context.SaveChanges();
-            if (effectedrows > 0)
+            catch
             {
-                if (hasnewcover)
-                {
-                    var cover = Path.Combine(_webHostEnvironment.WebRootPath, "assets", "Image", "Games", oldCover);
-                    File.Delete(cover);
-                }
-                return game;
+                TryDeleteCover(game.Cover);
+                throw;
             }
-            else
-            {
-                return game;
-            }
-
-
         }
 
-        public bool Delete(int id)
+        public async Task<IReadOnlyList<Game>> GetGamesAsync()
         {
-            var isdeleted = false;
-            var game = _context.Games.Find(id);
+            return await _context.Games
+                .AsNoTracking()
+                .Include(game => game.Catogry)
+                .Include(game => game.GameDevices)
+                    .ThenInclude(gameDevice => gameDevice.Device)
+                .OrderBy(game => game.Name)
+                .ToListAsync();
+        }
+
+        public async Task<bool> CheckOnUnique(string gameName, int? gameId = null)
+        {
+            return !await _context.Games
+                .AnyAsync(game => game.Name == gameName && game.Id != gameId);
+        }
+
+        public async Task<Game?> GetByIdAsync(int id)
+        {
+            return await _context.Games
+                .AsNoTracking()
+                .Include(game => game.Catogry)
+                .Include(game => game.GameDevices)
+                    .ThenInclude(gameDevice => gameDevice.Device)
+                .SingleOrDefaultAsync(game => game.Id == id);
+        }
+
+        public async Task<Game?> Edit(EditGameFormViewModel model)
+        {
+            var game = await _context.Games
+                .Include(current => current.GameDevices)
+                .SingleOrDefaultAsync(current => current.Id == model.id);
+
             if (game is null)
-                return isdeleted;
-            _context.Games.Remove(game);
-            var effectedrows = _context.SaveChanges();
-            if (effectedrows > 0)
+                return null;
+
+            var oldCover = game.Cover;
+            string? newCover = null;
+
+            game.Name = model.Name.Trim();
+            game.Description = model.Description.Trim();
+            game.CatogryId = model.SelectedCatogryId;
+
+            var selectedDeviceIds = model.SelectedDeviceID.Distinct().ToList();
+            game.GameDevices.Clear();
+            foreach (var deviceId in selectedDeviceIds)
             {
-                isdeleted = true;
-                var cover = Path.Combine(_webHostEnvironment.WebRootPath, "assets", "Image", "Games", game.Cover);
-                File.Delete(cover);
+                game.GameDevices.Add(new GameDevice { DeviceID = deviceId });
             }
 
-            return isdeleted;
+            if (model.CoverUrl is not null)
+            {
+                newCover = await _mapper.CreateCoverName(model.CoverUrl);
+                game.Cover = newCover;
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                if (newCover is not null)
+                    TryDeleteCover(newCover);
+
+                throw;
+            }
+
+            if (newCover is not null)
+                TryDeleteCover(oldCover);
+
+            return game;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var game = await _context.Games.FindAsync(id);
+            if (game is null)
+                return false;
+
+            _context.Games.Remove(game);
+            var affectedRows = await _context.SaveChangesAsync();
+
+            if (affectedRows <= 0)
+                return false;
+
+            TryDeleteCover(game.Cover);
+            return true;
+        }
+
+        public Task<bool> CategoryExistsAsync(int categoryId)
+        {
+            return _context.Catogries.AnyAsync(category => category.Id == categoryId);
+        }
+
+        public async Task<bool> DevicesExistAsync(IEnumerable<int> deviceIds)
+        {
+            var ids = deviceIds.Distinct().ToList();
+            if (ids.Count == 0)
+                return false;
+
+            return await _context.Devices.CountAsync(device => ids.Contains(device.Id)) == ids.Count;
+        }
+
+        private void TryDeleteCover(string? fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return;
+
+            var coverPath = Path.Combine(
+                _webHostEnvironment.WebRootPath,
+                "assets", "Image", "Games", fileName);
+
+            try
+            {
+                if (File.Exists(coverPath))
+                    File.Delete(coverPath);
+            }
+            catch (IOException exception)
+            {
+                _logger.LogWarning(exception, "Could not delete game cover {CoverName}", fileName);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                _logger.LogWarning(exception, "No permission to delete game cover {CoverName}", fileName);
+            }
         }
     }
 }

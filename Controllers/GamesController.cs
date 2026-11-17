@@ -1,122 +1,135 @@
-﻿using GameHub.Services.CatagoryService;
+using GameHub.Services.CatagoryService;
 using GameHub.Services.DeviceService;
 
 namespace GameHub.Controllers
 {
     public class GamesController : Controller
     {
-        #region DI
         private readonly ICatogryServices _catogryServices;
         private readonly IDeviceServices _deviceServices;
         private readonly IGameService _gameService;
-        public GamesController(ICatogryServices catogryServices, IDeviceServices deviceServices
-            , IGameService gameService)
+
+        public GamesController(
+            ICatogryServices catogryServices,
+            IDeviceServices deviceServices,
+            IGameService gameService)
         {
             _catogryServices = catogryServices;
             _deviceServices = deviceServices;
             _gameService = gameService;
         }
-        #endregion
-        public IActionResult Index()
+
+        [HttpGet]
+        public async Task<IActionResult> Index()
         {
-            var x = _gameService.GetGames();
-            return View("Index",x);
+            var games = await _gameService.GetGamesAsync();
+            return View("Index", games);
         }
+
         [HttpGet]
         public IActionResult Create()
         {
-            CreateGameViewModel viewModel = new()
-            {
-                Devices = _deviceServices.DeviceSelectedItem(),
-                catogries=_catogryServices.CatogrySelectedItem()
-            };  
-            return View("Create",viewModel);
+            var viewModel = new CreateGameViewModel();
+            PopulateSelectLists(viewModel);
+            return View("Create", viewModel);
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateGameViewModel model)
         {
+            await ValidateReferencesAsync(model.SelectedCatogryId, model.SelectedDeviceID);
+
             if (!await _gameService.CheckOnUnique(model.Name))
-                ModelState.AddModelError("Name", "This Game Already Exists");
-            var num = model.SelectedCatogryId;
-            if (ModelState.IsValid)
+                ModelState.AddModelError(nameof(model.Name), "This game already exists.");
+
+            if (!ModelState.IsValid)
             {
-                //save to db 
-                //save image to server and save url 
-                //redirect to index 
-               await  _gameService.Create(model);
-                 return RedirectToAction("Index","Home");
-            }
-            else
-            {
-                        
-                model.Devices = _deviceServices.DeviceSelectedItem();
-                model.catogries = _catogryServices.CatogrySelectedItem();
+                PopulateSelectLists(model);
                 return View("Create", model);
             }
-            
+
+            await _gameService.Create(model);
+            return RedirectToAction(nameof(Index));
         }
+
         [HttpGet]
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            var game = _gameService.GetById(id);
-            if(game is null)
+            var game = await _gameService.GetByIdAsync(id);
+            if (game is null)
                 return NotFound();
-            return View("Details",game);
+
+            return View("Details", game);
         }
+
         [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var game= _gameService.GetById(id);
-            if(game is null)
+            var game = await _gameService.GetByIdAsync(id);
+            if (game is null)
                 return NotFound();
-            EditGameFormViewModel model = new()
+
+            var model = new EditGameFormViewModel
             {
-                id = id,
+                id = game.Id,
                 Name = game.Name,
                 SelectedCatogryId = game.CatogryId,
-                SelectedDeviceID = game.GameDevices.Select(x => x.DeviceID).ToList(),
+                SelectedDeviceID = game.GameDevices.Select(item => item.DeviceID).ToList(),
                 Description = game.Description,
-                Devices=_deviceServices.DeviceSelectedItem(),
-                catogries=_catogryServices.CatogrySelectedItem(),
-                CurrentCover=game.Cover,
+                CurrentCover = game.Cover
             };
+
+            PopulateSelectLists(model);
             return View("Edit", model);
         }
-        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        
-        [CoverSizeValidation(5)]
         public async Task<IActionResult> Edit(EditGameFormViewModel model)
         {
+            await ValidateReferencesAsync(model.SelectedCatogryId, model.SelectedDeviceID);
 
-            if (await _gameService.CheckOnUnique(model.Name,model.id)==false)
-                ModelState.AddModelError("Name", "This Not Aavaliable ");
-            if (ModelState.IsValid)
-            { 
-                
-              var game=  await _gameService.Edit(model);
-                if (game is null)
-                    return BadRequest();
-                return RedirectToAction("Index", "Home");
-            }
-            else
+            if (!await _gameService.CheckOnUnique(model.Name, model.id))
+                ModelState.AddModelError(nameof(model.Name), "This game name is already in use.");
+
+            if (!ModelState.IsValid)
             {
-
-                model.Devices = _deviceServices.DeviceSelectedItem();
-                model.catogries = _catogryServices.CatogrySelectedItem();
+                PopulateSelectLists(model);
                 return View("Edit", model);
             }
+
+            var game = await _gameService.Edit(model);
+            if (game is null)
+                return NotFound();
+
+            return RedirectToAction(nameof(Index));
         }
-        [HttpGet]
-        //we will do it with ajax 
-        public IActionResult Delete(int id)
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
         {
-            var isdeleted=_gameService.Delete(id);
-            if(isdeleted)
-                return RedirectToAction("Index", "Home");
-            return BadRequest();
-        } 
+            var isDeleted = await _gameService.DeleteAsync(id);
+            if (!isDeleted)
+                return NotFound();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        private void PopulateSelectLists(CreateGameViewModel model)
+        {
+            model.Devices = _deviceServices.DeviceSelectedItem();
+            model.catogries = _catogryServices.CatogrySelectedItem();
+        }
+
+        private async Task ValidateReferencesAsync(int categoryId, IEnumerable<int> deviceIds)
+        {
+            if (!await _gameService.CategoryExistsAsync(categoryId))
+                ModelState.AddModelError(nameof(CreateGameViewModel.SelectedCatogryId), "Please select a valid category.");
+
+            if (deviceIds is null || !await _gameService.DevicesExistAsync(deviceIds))
+                ModelState.AddModelError(nameof(CreateGameViewModel.SelectedDeviceID), "Please select valid devices.");
+        }
     }
 }

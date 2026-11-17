@@ -1,71 +1,62 @@
 ﻿@model CreateGameViewModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Create Game";
 }
 <h1>Create New Game</h1>
 <hr />
-<form asp-action="Create" enctype="multipart/form-data">
-   <div class=" row">
-      <div class="col-md-6">
-        
-        <div class="form-group"> 
-            <label asp-for="Name" class="form-label mt-1"></label>
-            <input asp-for="Name" class="form-control" placeholder="Enter Game Name" />
-            <span asp-validation-for="Name" class="text-danger"></span>
-        </div>
-         <div class="form-group"> 
-            <label asp-for="Description" class="form-label mt-1"></label>
-            <textarea asp-for="Description" placeholder="Enter The Game Description" class="form-control" ></textarea>
-            <span asp-validation-for="Description" class="text-danger"></span>
-        </div>
-         <div class="form-group"> 
-            <label asp-for="SelectedCatogryId" class="form-label mt-1"></label>
-                <select asp-for="SelectedCatogryId" class="form-select" asp-items="@Model.catogries" data-placeholder="Select Catagory"  >
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label asp-for="Name" class="form-label mt-1"></label>
+                <input asp-for="Name" class="form-control" placeholder="Enter Game Name" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="form-label mt-1"></label>
+                <textarea asp-for="Description" placeholder="Enter The Game Description" class="form-control"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SelectedCatogryId" class="form-label mt-1"></label>
+                <select asp-for="SelectedCatogryId" class="form-select" asp-items="@Model.catogries">
+                    <option value="">Select a category</option>
                 </select>
-            <span asp-validation-for="SelectedCatogryId" class="text-danger"></span>
+                <span asp-validation-for="SelectedCatogryId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SelectedDeviceID" class="form-label mt-1"></label>
+                <select multiple asp-for="SelectedDeviceID" class="form-select" asp-items="@Model.Devices"></select>
+                <span asp-validation-for="SelectedDeviceID" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CoverUrl" class="form-label mt-1"></label>
+                <input type="file" asp-for="CoverUrl" class="form-control" />
+                <span asp-validation-for="CoverUrl" class="text-danger"></span>
+            </div>
+            <div class="d-flex mt-2 gap-4">
+                <input type="submit" value="Create" class="btn btn-outline-success" />
+                <input type="reset" value="Clear" class="btn btn-outline-danger" />
+                <a asp-action="Index" class="btn btn-outline-warning">Back to List</a>
+            </div>
         </div>
-        
-        <div class="form-group"> 
-            <label asp-for="SelectedDeviceID" class="form-label mt-1"></label>
-            <select  data-placeholder="Select Device" multiple="" asp-for="SelectedDeviceID" class="form-select" asp-items="@Model.Devices" >
-            </select>
-            <span asp-validation-for="SelectedDeviceID" class="text-danger"></span>
+        <div class="col-md-6 d-flex justify-content-center pt-3 overflow-hidden">
+            <img src="" alt="Cover preview" class="CoverPrev d-none" />
         </div>
-        <div class="form-group"> 
-            <label asp-for="CoverUrl" class="form-label mt-1"></label>
-            <input type="file" asp-for="CoverUrl" class="form-control" />
-            <span asp-validation-for="CoverUrl" class="text-danger"></span>
-        </div>
-
-        <div class="d-flex mt-2 gap-4">
-            <input type="submit" value="Create" class="btn btn-outline-success " />
-            <input type="reset" value="Clear" class="btn btn-outline-danger  " />
-            <a asp-action="Index" class="btn btn-outline-warning" > Back to List</a>
-        </div>
- 
-       
-   </div>
-    <div class="col-md-6 d-flex justify-content-center pt-3 overflow-hidden ">
-    <img src="" alt="Cover" class="CoverPrev d-none" />
-    </div>
     </div>
 </form>
 
-    
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script>
         $(document).ready(function () {
             $('#CoverUrl').on('change', function () {
-
                 if (this.files && this.files[0]) {
-                    $('.CoverPrev').attr(
-                        'src',
-                        window.URL.createObjectURL(this.files[0])
-                    ).removeClass('d-none');
+                    $('.CoverPrev').attr('src', window.URL.createObjectURL(this.files[0])).removeClass('d-none');
                 }
-
             });
         });
     </script>
