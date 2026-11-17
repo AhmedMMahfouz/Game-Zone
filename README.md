@@ -46,7 +46,7 @@ The application uses a simple separation of concerns:
 ![Update game](Project%20ScreenShots/Update%20The%20Game%20.png)
 
 ## Notes
-project build with .net8 
+-project built with .net8 
 - Uploaded cover images are stored under `wwwroot/assets/Image/Games`.
 - The project includes EF Core migrations in the `Migrations` directory.
 - The current sample connection string uses LocalDB and may need adjustment on non-Windows environments.
