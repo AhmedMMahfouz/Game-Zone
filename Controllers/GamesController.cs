@@ -27,10 +27,10 @@ namespace GameHub.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             var viewModel = new CreateGameViewModel();
-            PopulateSelectLists(viewModel);
+            await PopulateSelectListsAsync(viewModel);
             return View("Create", viewModel);
         }
 
@@ -45,7 +45,7 @@ namespace GameHub.Controllers
 
             if (!ModelState.IsValid)
             {
-                PopulateSelectLists(model);
+                await PopulateSelectListsAsync(model);
                 return View("Create", model);
             }
 
@@ -80,7 +80,7 @@ namespace GameHub.Controllers
                 CurrentCover = game.Cover
             };
 
-            PopulateSelectLists(model);
+            await PopulateSelectListsAsync(model);
             return View("Edit", model);
         }
 
@@ -95,7 +95,7 @@ namespace GameHub.Controllers
 
             if (!ModelState.IsValid)
             {
-                PopulateSelectLists(model);
+                await PopulateSelectListsAsync(model);
                 return View("Edit", model);
             }
 
@@ -117,10 +117,16 @@ namespace GameHub.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private void PopulateSelectLists(CreateGameViewModel model)
+        private async Task PopulateSelectListsAsync(CreateGameViewModel model)
         {
-            model.Devices = _deviceServices.DeviceSelectedItem();
-            model.catogries = _catogryServices.CatogrySelectedItem();
+            model.Devices = await _deviceServices.DeviceSelectedItemAsync();
+            model.catogries = await _catogryServices.CatogrySelectedItemAsync();
+        }
+
+        private async Task PopulateSelectListsAsync(EditGameFormViewModel model)
+        {
+            model.Devices = await _deviceServices.DeviceSelectedItemAsync();
+            model.catogries = await _catogryServices.CatogrySelectedItemAsync();
         }
 
         private async Task ValidateReferencesAsync(int categoryId, IEnumerable<int> deviceIds)
