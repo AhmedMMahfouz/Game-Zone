@@ -61,7 +61,7 @@ The default connection string is configured in `appsettings.json` for SQL Server
 ```json
 {
   "ConnectionStrings": {
-    "defaultConnection": "server=(localdb)\\\\ProjectModels;Database=GameHub;Integrated Security=True;TrustServerCertificate=True"
+    "defaultConnection": "server=(localdb)\\ProjectModels;Database=GameHub;Integrated Security=True;TrustServerCertificate=True"
   }
 }
 ```
