@@ -25,10 +25,7 @@ namespace GameHub.Services.Mapper
             return game;
         }
 
-        public Task<string> CreateCoverName(IFormFile formFile)
-        {
-            return SaveCoverAsync(formFile);
-        }
+        public Task<string> CreateCoverName(IFormFile formFile) => SaveCoverAsync(formFile);
 
         private async Task<string> SaveCoverAsync(IFormFile formFile)
         {
@@ -37,11 +34,21 @@ namespace GameHub.Services.Mapper
             Directory.CreateDirectory(folderPath);
 
             var fileLocation = Path.Combine(folderPath, fileName);
-            await using var stream = new FileStream(
-                fileLocation, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, useAsync: true);
+            try
+            {
+                await using var stream = new FileStream(
+                    fileLocation, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, useAsync: true);
 
-            await formFile.CopyToAsync(stream);
-            return fileName;
+                await formFile.CopyToAsync(stream);
+                return fileName;
+            }
+            catch
+            {
+                if (File.Exists(fileLocation))
+                    File.Delete(fileLocation);
+
+                throw;
+            }
         }
     }
 }
